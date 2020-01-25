@@ -26,6 +26,8 @@ func New(t tv.TV, p player.Player) API {
 	echoInstance.HideBanner = true
 	echoInstance.GET("/", apiInstance.index)
 	echoInstance.GET("/api/tv/profiles", apiInstance.getProfiles)
+	echoInstance.GET("/api/tv/volume/up", apiInstance.volumeUp)
+	echoInstance.GET("/api/tv/volume/down", apiInstance.volumeDown)
 	echoInstance.PUT("/api/tv/status", apiInstance.changeTVStatus)
 
 	return apiInstance
@@ -47,7 +49,8 @@ func (a *api) index(c echo.Context) error {
 	   </nav>
 
 	   <pre id="console"></pre>
-
+	   <button id="volume-up">Volume up</button>
+	   <button id="volume-down">Volume down</button>
 	   <ul id="profiles" class="collection">
 	   </ul>
 
@@ -65,6 +68,14 @@ func (a *api) index(c echo.Context) error {
 				 const text = await response.text();
 				 consoleDOM.textContent = text;
 			  }
+		 }
+
+		 document.getElementById('volume-up').onclick = async () => {
+			  await fetch('/api/tv/volume/up')
+		 }
+
+		 document.getElementById('volume-down').onclick = async () => {
+			  await fetch('/api/tv/volume/down')
 		 }
 
 		 async function loadProfiles() {
@@ -98,6 +109,14 @@ func (a *api) index(c echo.Context) error {
 `)
 }
 
+func (a *api) volumeUp(c echo.Context) error {
+	return a.tv.VolumeUp(c.Request().Context())
+}
+
+func (a *api) volumeDown(c echo.Context) error {
+	return a.tv.VolumeDown(c.Request().Context())
+}
+
 func (a *api) changeTVStatus(c echo.Context) error {
 	ctx := c.Request().Context()
 	b, err := ioutil.ReadAll(c.Request().Body)
@@ -105,9 +124,16 @@ func (a *api) changeTVStatus(c echo.Context) error {
 		return err
 	}
 
+	if string(b) == "off" {
+		err = a.tv.TurnOff(ctx)
+		if err != nil {
+			return err
+		}
+		return c.String(http.StatusOK, "OK")
+	}
+
 	profile := GetProfile(string(b))
 	if profile == nil {
-		err = a.tv.TurnOff(ctx)
 	} else {
 		err = a.tv.TurnOn(ctx)
 		if err == nil {

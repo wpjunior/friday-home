@@ -8,6 +8,10 @@ type Profile struct {
 
 var Profiles = []Profile{
 	{
+		ID:   "off",
+		Name: "Desligado",
+	},
+	{
 		ID:   "vibe-leidy",
 		Name: "Vibe Leidy",
 		YoutubeChannels: []string{
